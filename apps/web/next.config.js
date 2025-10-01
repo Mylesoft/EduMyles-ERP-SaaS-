@@ -11,8 +11,8 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
   
-  // Transpile workspace packages
-  transpilePackages: ['@edumyles/types'],
+  // Transpile workspace packages (removed - not using workspace deps for Netlify)
+  // transpilePackages: ['@edumyles/types'],
   
   async rewrites() {
     return [

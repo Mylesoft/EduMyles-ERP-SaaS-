@@ -1,12 +1,12 @@
 [build]
-  # Build command
-  command = "cd apps/web && npm install --legacy-peer-deps && npm run build"
+  # Build command - use npm ci with workspaces disabled
+  command = "cd apps/web && npm install --legacy-peer-deps --workspaces=false --include-workspace-root=false && npm run build"
   
   # Publish directory
   publish = "apps/web/.next"
   
   # Base directory
-  base = "/"
+  base = "apps/web"
 
 [build.environment]
   # Node version
