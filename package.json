@@ -1,50 +1,30 @@
 {
   "name": "edumyles",
   "version": "1.0.0",
-  "private": true,
-  "description": "Modular multi-tenant school management system",
-  "keywords": ["education", "school", "management", "multi-tenant", "modular"],
-  "author": "Myles Corp Ltd",
-  "license": "MIT",
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "modules/*"
-  ],
+  "description": "Comprehensive School Management System for African Learning Institutions",
+  "main": "index.js",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e",
-    "test:coverage": "turbo run test:coverage",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean",
-    "db:generate": "cd packages/database && prisma generate",
-    "db:push": "cd packages/database && prisma db push",
-    "db:seed": "cd packages/database && npm run seed",
-    "db:migrate": "cd packages/database && prisma migrate dev",
-    "db:studio": "cd packages/database && prisma studio",
-    "create:module": "node scripts/create-module.js",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:build": "docker-compose build"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test"
   },
+  "keywords": [
+    "school-management",
+    "education",
+    "multi-tenant",
+    "africa",
+    "kenya"
+  ],
+  "author": "Mylesoft",
+  "license": "MIT",
   "devDependencies": {
-    "turbo": "^1.10.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.45.0",
-    "eslint-config-next": "^14.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-react": "^7.33.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.1.6"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "concurrently": "^8.2.2"
   }
 }
