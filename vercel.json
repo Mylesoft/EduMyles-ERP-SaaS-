@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm run build --filter=@edumyles/web",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "bash build-vercel.sh",
+  "installCommand": "echo 'Using custom build script'",
   "framework": null,
   "outputDirectory": "apps/web/.next"
 }
