@@ -12,7 +12,7 @@ export interface EduMylesModule {
 
   // Technical Specifications
   dependencies: string[]; // Other modules it depends on
-  permissions: Permission[]; // Permissions it requires
+  permissions: string[]; // Permissions it requires
   databaseSchema?: DatabaseSchema; // DB changes it needs
   apiEndpoints: APIEndpoint[]; // APIs it exposes
 

@@ -42,6 +42,14 @@ export interface DashboardPreferences {
   density: 'compact' | 'comfortable' | 'spacious';
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 export interface UserProfileDetails {
   phoneNumber?: string;
   dateOfBirth?: Date;
