@@ -1,0 +1,407 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core Platform Models
+
+model Tenant {
+  id            String      @id @default(cuid())
+  name          String
+  subdomain     String      @unique
+  customDomain  String?     @unique
+  logo          String?
+  primaryColor  String?
+  secondaryColor String?
+  status        TenantStatus @default(ACTIVE)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // JSON fields for complex data
+  settings      Json        @default("{}")
+  contactInfo   Json        @default("{}")
+  billingInfo   Json?
+  plan          Json        @default("{}")
+
+  // Relations
+  users         TenantUser[]
+  moduleInstallations ModuleInstallation[]
+  events        Event[]
+  sessions      Session[]
+
+  @@map("tenants")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  TRIAL
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  avatar        String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations
+  tenantUsers   TenantUser[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model TenantUser {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  role        UserRole
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // JSON fields for complex data
+  permissions Json     @default("[]")
+  preferences Json     @default("{}")
+  profile     Json     @default("{}")
+
+  // Relations
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@map("tenant_users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  PRINCIPAL
+  VICE_PRINCIPAL
+  TEACHER
+  STUDENT
+  PARENT
+  STAFF
+  LIBRARIAN
+  ACCOUNTANT
+  NURSE
+  SECURITY
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  tenantId     String
+  token        String    @unique
+  refreshToken String    @unique
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  userAgent    String?
+  ipAddress    String?
+  isActive     Boolean   @default(true)
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// Module System Models
+
+model Module {
+  id            String    @id
+  name          String
+  version       String
+  description   String
+  author        String
+  category      String
+  icon          String?
+  homepage      String?
+  repository    String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // JSON fields for complex module data
+  manifest      Json      @default("{}")
+  pricing       Json?
+
+  // Relations
+  installations ModuleInstallation[]
+
+  @@unique([id, version])
+  @@map("modules")
+}
+
+model ModuleInstallation {
+  id          String                @id @default(cuid())
+  tenantId    String
+  moduleId    String
+  version     String
+  status      ModuleInstallationStatus @default(INSTALLING)
+  config      Json                  @default("{}")
+  installedAt DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  error       String?
+
+  // Relations
+  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  module      Module                @relation(fields: [moduleId, version], references: [id, version])
+
+  @@unique([tenantId, moduleId])
+  @@map("module_installations")
+}
+
+enum ModuleInstallationStatus {
+  INSTALLING
+  INSTALLED
+  UNINSTALLING
+  ERROR
+}
+
+// Event System Models
+
+model Event {
+  id          String   @id @default(cuid())
+  type        String
+  source      String   // Module ID
+  tenantId    String
+  timestamp   DateTime @default(now())
+  data        Json     @default("{}")
+  metadata    Json?
+
+  // Relations
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([type, tenantId])
+  @@index([source, tenantId])
+  @@index([timestamp])
+  @@map("events")
+}
+
+model EventSubscription {
+  id        String   @id @default(cuid())
+  eventType String
+  moduleId  String
+  handler   String
+  active    Boolean  @default(true)
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([moduleId])
+  @@map("event_subscriptions")
+}
+
+// Permission System
+
+model Permission {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  resource    String
+  action      String
+  conditions  Json?  @default("[]")
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  role         UserRole
+  permissionId String
+  tenantId     String?  // null for global permissions
+
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([role, permissionId, tenantId])
+  @@map("role_permissions")
+}
+
+// Academic Module Models (Core module data)
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  semesters Semester[]
+
+  @@unique([tenantId, name])
+  @@map("academic_years")
+}
+
+model Semester {
+  id             String      @id @default(cuid())
+  tenantId       String
+  academicYearId String
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  classes        Class[]
+
+  @@unique([tenantId, academicYearId, name])
+  @@map("semesters")
+}
+
+model Grade {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String   // e.g., "Grade 1", "Kindergarten", "10th Grade"
+  level       Int      // Numeric level for sorting
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classes     Class[]
+  subjects    Subject[]
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, level])
+  @@map("grades")
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  tenantId    String
+  gradeId     String
+  semesterId  String
+  name        String   // e.g., "Section A", "Class 1A"
+  capacity    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grade       Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  semester    Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, gradeId, semesterId, name])
+  @@map("classes")
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  tenantId    String
+  gradeId     String
+  name        String
+  code        String
+  description String?
+  color       String?
+  credits     Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grade       Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, gradeId, code])
+  @@map("subjects")
+}
+
+// Student Profile Extension
+model StudentProfile {
+  id            String   @id @default(cuid())
+  tenantId      String
+  userId        String   @unique
+  studentId     String
+  admissionDate DateTime
+  graduationDate DateTime?
+  currentGrade  String
+  section       String?
+  rollNumber    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // JSON fields for complex data
+  medicalInfo   Json?    @default("{}")
+  academicInfo  Json     @default("{}")
+  transportInfo Json?    @default("{}")
+
+  @@unique([tenantId, studentId])
+  @@unique([tenantId, rollNumber])
+  @@map("student_profiles")
+}
+
+// Teacher Profile Extension  
+model TeacherProfile {
+  id           String   @id @default(cuid())
+  tenantId     String
+  userId       String   @unique
+  employeeId   String
+  hireDate     DateTime
+  department   String
+  experience   Int      // years
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // JSON fields for complex data
+  subjects       Json     @default("[]")
+  qualifications Json     @default("[]")
+  salary         Json?
+  workSchedule   Json?
+
+  @@unique([tenantId, employeeId])
+  @@map("teacher_profiles")
+}
+
+// Parent Profile Extension
+model ParentProfile {
+  id           String   @id @default(cuid())
+  tenantId     String
+  userId       String   @unique
+  relationship String   // father, mother, guardian, etc.
+  occupation   String?
+  workplace    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // JSON field for children IDs
+  children     Json     @default("[]")
+
+  @@map("parent_profiles")
+}
+
+// Audit Log
+model AuditLog {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String?
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@index([tenantId, action])
+  @@index([tenantId, resource])
+  @@index([tenantId, userId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}

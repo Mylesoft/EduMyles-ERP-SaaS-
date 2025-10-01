@@ -1,0 +1,50 @@
+{
+  "name": "edumyles",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular multi-tenant school management system",
+  "keywords": ["education", "school", "management", "multi-tenant", "modular"],
+  "author": "Myles Corp Ltd",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "modules/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "test:coverage": "turbo run test:coverage",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "db:generate": "cd packages/database && prisma generate",
+    "db:push": "cd packages/database && prisma db push",
+    "db:seed": "cd packages/database && npm run seed",
+    "db:migrate": "cd packages/database && prisma migrate dev",
+    "db:studio": "cd packages/database && prisma studio",
+    "create:module": "node scripts/create-module.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "eslint-config-next": "^14.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020", "dom"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@edumyles/types": ["./packages/types/src"],
+      "@edumyles/database": ["./packages/database/src"]
+    }
+  },
+  "include": [],
+  "exclude": ["node_modules", "dist", "build"],
+  "references": [
+    { "path": "./packages/types" },
+    { "path": "./packages/database" },
+    { "path": "./apps/api" }
+  ]
+}
