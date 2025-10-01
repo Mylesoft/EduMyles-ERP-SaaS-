@@ -1,0 +1,27 @@
+[build]
+  # Build command
+  command = "cd apps/web && npm install --legacy-peer-deps && npm run build"
+  
+  # Publish directory
+  publish = "apps/web/.next"
+  
+  # Base directory
+  base = "/"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "18"
+  
+  # Next.js specific
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Redirect all requests to Next.js
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# Next.js specific plugin
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
