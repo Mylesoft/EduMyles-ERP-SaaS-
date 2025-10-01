@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error-handler';
 
 const router = Router();
 
 // Get installed modules
-router.get('/installed', asyncHandler(async (req, res) => {
+router.get('/installed', asyncHandler(async (req: Request, res: Response) => {
   res.json({
     success: true,
     message: 'Module endpoints - implementation coming soon',
@@ -13,7 +13,7 @@ router.get('/installed', asyncHandler(async (req, res) => {
 }));
 
 // Get available modules (marketplace)
-router.get('/available', asyncHandler(async (req, res) => {
+router.get('/available', asyncHandler(async (req: Request, res: Response) => {
   res.json({
     success: true,
     message: 'Module marketplace - implementation coming soon',

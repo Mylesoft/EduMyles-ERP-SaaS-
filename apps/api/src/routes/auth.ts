@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { body } from 'express-validator';
 import { asyncHandler } from '../middleware/error-handler';
 // Controllers will be implemented later
@@ -10,7 +10,7 @@ const router = Router();
 router.post('/login',
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     // Placeholder implementation
     res.json({
       success: true,
@@ -26,7 +26,7 @@ router.post('/register',
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     // Placeholder implementation
     res.json({
       success: true,
@@ -39,7 +39,7 @@ router.post('/register',
 // Refresh token
 router.post('/refresh',
   body('refreshToken').notEmpty(),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     // Placeholder implementation
     res.json({
       success: true,
@@ -51,7 +51,7 @@ router.post('/refresh',
 
 // Logout
 router.post('/logout',
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     // Placeholder implementation
     res.json({
       success: true,

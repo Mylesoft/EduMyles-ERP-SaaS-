@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/error-handler';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
 // Get current tenant info
-router.get('/info', asyncHandler(async (req, res) => {
+router.get('/info', asyncHandler(async (req: Request, res: Response) => {
   const tenant = req.tenant;
   
   // Remove sensitive information
@@ -33,7 +33,7 @@ router.get('/info', asyncHandler(async (req, res) => {
 // Get tenant settings (requires auth)
 router.get('/settings', 
   authMiddleware,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const tenant = req.tenant;
     
     res.json({

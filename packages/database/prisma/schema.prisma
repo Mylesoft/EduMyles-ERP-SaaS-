@@ -219,6 +219,8 @@ model Permission {
   action      String
   conditions  Json?  @default("[]")
 
+  rolePermissions RolePermission[]
+
   @@map("permissions")
 }
 

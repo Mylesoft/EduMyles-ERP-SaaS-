@@ -76,7 +76,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       req.tenantContext = {
         tenant: req.tenant,
         user: req.user,
-        permissions: tenantUser.permissions,
+        permissions: Array.isArray(tenantUser.permissions) ? tenantUser.permissions as string[] : [],
         installedModules: req.tenant.moduleInstallations
           .filter((mi: any) => mi.status === 'INSTALLED')
           .map((mi: any) => mi.moduleId),
