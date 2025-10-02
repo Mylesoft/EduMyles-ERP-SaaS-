@@ -62,6 +62,7 @@ model User {
   // Relations
   tenantUsers   TenantUser[]
   sessions      Session[]
+  studentProfile StudentProfile?
 
   @@map("users")
 }
@@ -360,6 +361,7 @@ model StudentProfile {
   transportInfo Json?    @default("{}")
 
   // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   enrollments   StudentEnrollment[]
   attendance    Attendance[]
   gradeRecords  GradeRecord[]

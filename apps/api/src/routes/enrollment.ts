@@ -67,7 +67,7 @@ router.get('/',
           include: {
             student: {
               include: {
-                userId: true
+                user: true
               }
             },
             academicYear: true,
@@ -116,7 +116,7 @@ router.get('/:id',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           academicYear: true,
@@ -195,7 +195,7 @@ router.post('/',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           academicYear: true,
@@ -269,7 +269,7 @@ router.put('/:id',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           academicYear: true,

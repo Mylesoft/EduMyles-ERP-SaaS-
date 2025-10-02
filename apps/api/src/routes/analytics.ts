@@ -393,7 +393,7 @@ router.get('/students/:studentId/performance',
       const student = await prisma.studentProfile.findFirst({
         where: { id: studentId, tenantId },
         include: {
-          userId: true
+          user: true
         }
       });
       
@@ -481,7 +481,7 @@ router.get('/students/:studentId/performance',
         data: {
           student: {
             id: student.id,
-            name: `${student.userId.firstName} ${student.userId.lastName}`,
+            name: `${student.user.firstName} ${student.user.lastName}`,
             studentId: student.studentId,
           },
           attendance: {
@@ -531,7 +531,7 @@ router.get('/reports/export',
           data = await prisma.studentEnrollment.findMany({
             where: { tenantId, ...filters },
             include: {
-              student: { include: { userId: true } },
+              student: { include: { user: true } },
               grade: true,
               class: true,
               academicYear: true,
@@ -543,7 +543,7 @@ router.get('/reports/export',
           data = await prisma.attendance.findMany({
             where: { tenantId, ...filters },
             include: {
-              student: { include: { userId: true } },
+              student: { include: { user: true } },
               class: true,
               subject: true,
             },
@@ -554,7 +554,7 @@ router.get('/reports/export',
           data = await prisma.assessmentSubmission.findMany({
             where: { tenantId, ...filters },
             include: {
-              student: { include: { userId: true } },
+              student: { include: { user: true } },
               assessment: {
                 include: {
                   subject: true,

@@ -154,7 +154,7 @@ router.get('/:id',
             include: {
               student: {
                 include: {
-                  userId: true
+                  user: true
                 }
               }
             }
@@ -684,7 +684,7 @@ router.post('/:id/submit',
           },
           student: {
             include: {
-              userId: true
+              user: true
             }
           }
         },
@@ -751,7 +751,7 @@ router.get('/:id/submissions',
           include: {
             student: {
               include: {
-                userId: true
+                user: true
               }
             },
             assessment: {
@@ -828,7 +828,7 @@ router.put('/submissions/:submissionId/grade',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           assessment: {

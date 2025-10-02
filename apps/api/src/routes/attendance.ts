@@ -85,7 +85,7 @@ router.get('/',
           include: {
             student: {
               include: {
-                userId: true
+                user: true
               }
             },
             class: true,
@@ -133,7 +133,7 @@ router.get('/:id',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           class: true,
@@ -198,7 +198,7 @@ router.post('/',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           class: true,
@@ -270,7 +270,7 @@ router.put('/:id',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           class: true,
@@ -407,7 +407,7 @@ router.post('/bulk',
               include: {
                 student: {
                   include: {
-                    userId: true
+                    user: true
                   }
                 },
               },
@@ -426,7 +426,7 @@ router.post('/bulk',
               include: {
                 student: {
                   include: {
-                    userId: true
+                    user: true
                   }
                 },
               },
@@ -582,7 +582,7 @@ router.get('/class/:classId/report',
         include: {
           student: {
             include: {
-              userId: true
+              user: true
             }
           },
           subject: true,
