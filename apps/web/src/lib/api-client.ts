@@ -31,9 +31,20 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const headers: HeadersInit = {
+    const normalizeHeaders = (init?: HeadersInit): Record<string, string> => {
+      if (!init) return {};
+      if (init instanceof Headers) {
+        return Object.fromEntries(init.entries());
+      }
+      if (Array.isArray(init)) {
+        return Object.fromEntries(init);
+      }
+      return { ...(init as Record<string, string>) };
+    };
+
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...normalizeHeaders(options.headers),
     };
 
     if (this.token) {

@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description: 'Modular multi-tenant school management platform',
 };
 
+// Force full SSR to avoid accidental static prerender of auth-protected routes
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alert Investigation Report</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1, h2, h3 { margin-top: 1.5em; margin-bottom: 0.5em; page-break-after: avoid; }
+    h1 { font-size: 24px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    h2 { font-size: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 3px solid #eee; padding-bottom: 15px; }
+    .header-left { flex: 1; }
+    .header-right { flex: 1; text-align: right; }
+    .severity-badge { display: inline-block; padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-bottom: 10px; }
+    .sev-2 { background-color: #f0ad4e; color: white; }
+    .section { margin-bottom: 30px; page-break-inside: avoid; }
+    pre { background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 14px; page-break-inside: avoid; }
+    details { margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background-color: #f9f9f9; }
+    summary { font-weight: bold; cursor: pointer; }
+    img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 10px 0; page-break-inside: avoid; }
+    a { color: #0366d6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .timeline { margin-left: 20px; }
+    .timeline-item { margin-bottom: 15px; position: relative; }
+    .timeline-time { font-weight: bold; margin-right: 10px; }
+    .timeline-content { margin-left: 10px; }
+    .fix-steps { list-style-type: decimal; padding-left: 20px; }
+    .fix-step { margin-bottom: 15px; }
+    .footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; font-size: 12px; color: #777; text-align: center; }
+    .replace-note { background-color: #fffacd; padding: 2px 4px; border-radius: 3px; font-style: italic; font-size: 0.9em; color: #555; }
+  </style>
+</head>
+<body>
+  <div class="header" id="header">
+    <div class="header-left">
+      <h1>Alert Investigation – AWS Amplify shows "Welcome" placeholder for EduMyles-ERP-SaaS</h1>
+      <div>
+        <span class="severity-badge sev-2">SEV-2</span>
+        <span>Started: <span id="start-time">Unknown (reported by user)</span></span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div>On-call: <strong id="oncall-engineer">Myles Corp Ltd</strong></div>
+    </div>
+  </div>
+
+  <div class="section" id="exec-summary">
+    <h2>Executive Summary</h2>
+    <p>AWS Amplify Hosting displays the default "Welcome – Your app will appear here once you complete your first deployment" page for the EduMyles app. This occurs when the build succeeds but Amplify does not find an <code>index.html</code> in the configured artifacts <code>baseDirectory</code> or the build output directory points to the wrong path in a monorepo. The repository is a Turborepo monorepo with the Next.js app at <code>apps/web</code>; no <code>amplify.yml</code> is present, and the app’s Next.js config outputs <code>standalone</code> (SSR) by default. Amplify is likely configured for Static Hosting with an incorrect <code>baseDirectory</code> or build commands that never generate an <code>index.html</code> in the location Amplify serves from.</p>
+  </div>
+
+  <div class="section" id="rca">
+    <h2>Root Cause Analysis</h2>
+    <div>
+      <p>Suspected root cause:</p>
+      <ul>
+        <li><strong>Primary Hypothesis:</strong> Amplify build settings point to the wrong artifact path for a monorepo Next.js app (<code>apps/web</code>), so the final artifact directory is empty or missing <code>index.html</code>; Amplify therefore shows the placeholder page.</li>
+        <li><strong>Contributing Factors:</strong> No <code>amplify.yml</code> in repo; Next.js config uses <code>output: 'standalone'</code> (SSR) which does not produce an <code>out/index.html</code> unless <code>next export</code> or <code>output: 'export'</code> is used for Static Hosting.</li>
+      </ul>
+
+      <h3>Evidence</h3>
+      <h4>Repo Structure</h4>
+      <pre>./apps/web (Next.js 14 app router)
+./apps/api (Express)
+No amplify.yml at repo root
+</pre>
+
+      <h4>Next.js config</h4>
+      <pre>apps/web/next.config.js → output: 'standalone'</pre>
+
+      <h4>Build scripts</h4>
+      <pre>apps/web/package.json → "build": "next build" (no export step)</pre>
+    </div>
+  </div>
+
+  <div class="section" id="fix-proposal">
+    <h2>Proposed Fix</h2>
+    <ol class="fix-steps">
+      <li class="fix-step">
+        <strong>Immediate Mitigation (choose one hosting model):</strong>
+        <div>
+          <p><strong>Option A — Static Hosting</strong> (requires purely static pages):</p>
+          <pre>amplify.yml
+version: 1
+applications:
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - corepack prepare pnpm@8.15.0 --activate
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - cd apps/web
+            - pnpm build
+            - npx next export -o out
+      artifacts:
+        baseDirectory: apps/web/out
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - apps/web/.next/cache/**/*</pre>
+          <p>Add <code>output: 'export'</code> to <code>apps/web/next.config.js</code> if required for SSG-only export.</p>
+          <p><strong>Option B — Amplify SSR for Next.js</strong> (recommended for SSR/app router):</p>
+          <pre>amplify.yml
+version: 1
+applications:
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - corepack prepare pnpm@8.15.0 --activate
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - cd apps/web
+            - pnpm build
+      artifacts:
+        baseDirectory: apps/web/.next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - apps/web/node_modules/**/*
+          - apps/web/.next/cache/**/*</pre>
+          <p>Ensure the Amplify app is created as "Amplify Hosting with SSR (Next.js)". This uses the <code>.next</code> output and serves SSR correctly.</p>
+        </div>
+        <div>Validation: Trigger a new Amplify build; verify the artifact directory contains <code>index.html</code> (Static) or the full <code>.next</code> bundle (SSR). The live URL should no longer show the placeholder.</div>
+      </li>
+      <li class="fix-step">
+        <strong>Short-term Fix:</strong> In Amplify Console → App settings → Build settings, paste the chosen <code>amplify.yml</code> and set the correct <strong>baseDirectory</strong> (<code>apps/web/out</code> for Static, <code>apps/web/.next</code> for SSR). Confirm the build runs from monorepo root and installs dependencies with pnpm via Corepack.</strong>
+        <div>Validation: The build logs should show commands executing in <code>apps/web</code> and successful artifact upload.</div>
+      </li>
+      <li class="fix-step">
+        <strong>Long-term Solution:</strong> Commit <code>amplify.yml</code> to the repo root and standardize monorepo deployment docs. Add CI checks to validate that the artifact directory exists after build. Consider environment-specific scripts for SSR vs Static.</li>
+    </ol>
+  </div>
+
+  <div class="section" id="timeline">
+    <h2>Incident Timeline</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <span class="timeline-time">T0</span>
+        <div class="timeline-content">User reports Amplify shows placeholder page instead of app.</div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-time">T0 + investigation</span>
+        <div class="timeline-content">Repo inspection confirms monorepo, Next.js at <code>apps/web</code>, no <code>amplify.yml</code>, <code>output: 'standalone'</code>, and no export step.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Generated: <span id="generation-date">2025-10-02</span></p>
+  </div>
+</body>
+</html>
