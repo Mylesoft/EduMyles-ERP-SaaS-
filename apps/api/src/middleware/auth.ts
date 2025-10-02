@@ -145,3 +145,6 @@ export const requireRole = (role: string | string[]) => {
     next();
   };
 };
+
+// Alias for compatibility with route files
+export const authenticateToken = authMiddleware;

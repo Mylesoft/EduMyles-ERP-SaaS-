@@ -61,3 +61,6 @@ export const tenantMiddleware = async (req: Request, res: Response, next: NextFu
     next(error);
   }
 };
+
+// Alias for compatibility with route files
+export const validateTenant = tenantMiddleware;

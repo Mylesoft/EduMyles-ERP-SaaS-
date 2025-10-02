@@ -19,6 +19,10 @@ import tenantRoutes from './routes/tenant';
 import moduleRoutes from './routes/module';
 import userRoutes from './routes/user';
 import academicRoutes from './routes/academic';
+import enrollmentRoutes from './routes/enrollment';
+import attendanceRoutes from './routes/attendance';
+import assessmentRoutes from './routes/assessment';
+import analyticsRoutes from './routes/analytics';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -85,6 +89,10 @@ app.use('/api/tenant', tenantMiddleware, tenantRoutes);
 app.use('/api/modules', tenantMiddleware, authMiddleware, moduleRoutes);
 app.use('/api/users', tenantMiddleware, authMiddleware, userRoutes);
 app.use('/api/academic', tenantMiddleware, authMiddleware, academicRoutes);
+app.use('/api/enrollment', tenantMiddleware, authMiddleware, enrollmentRoutes);
+app.use('/api/attendance', tenantMiddleware, authMiddleware, attendanceRoutes);
+app.use('/api/assessment', tenantMiddleware, authMiddleware, assessmentRoutes);
+app.use('/api/analytics', tenantMiddleware, authMiddleware, analyticsRoutes);
 
 // Error handling middleware (must be last)
 app.use(notFoundHandler);

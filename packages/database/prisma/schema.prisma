@@ -248,7 +248,11 @@ model AcademicYear {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  semesters Semester[]
+  semesters        Semester[]
+  enrollments      StudentEnrollment[]
+  gradeRecords     GradeRecord[]
+  reportCards      ReportCard[]
+  feeStructures    FeeStructure[]
 
   @@unique([tenantId, name])
   @@map("academic_years")
@@ -267,6 +271,8 @@ model Semester {
 
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   classes        Class[]
+  gradeRecords   GradeRecord[]
+  reportCards    ReportCard[]
 
   @@unique([tenantId, academicYearId, name])
   @@map("semesters")
@@ -281,8 +287,10 @@ model Grade {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  classes     Class[]
-  subjects    Subject[]
+  classes       Class[]
+  subjects      Subject[]
+  enrollments   StudentEnrollment[]
+  feeStructures FeeStructure[]
 
   @@unique([tenantId, name])
   @@unique([tenantId, level])
@@ -299,8 +307,12 @@ model Class {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  grade       Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
-  semester    Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  grade         Grade           @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  semester      Semester        @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  enrollments   StudentEnrollment[]
+  attendance    Attendance[]
+  assessments   Assessment[]
+  timetableEntries TimetableEntry[]
 
   @@unique([tenantId, gradeId, semesterId, name])
   @@map("classes")
@@ -318,7 +330,11 @@ model Subject {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  grade       Grade    @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  grade        Grade           @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  attendance   Attendance[]
+  gradeRecords GradeRecord[]
+  assessments  Assessment[]
+  timetableEntries TimetableEntry[]
 
   @@unique([tenantId, gradeId, code])
   @@map("subjects")
@@ -342,6 +358,14 @@ model StudentProfile {
   medicalInfo   Json?    @default("{}")
   academicInfo  Json     @default("{}")
   transportInfo Json?    @default("{}")
+
+  // Relations
+  enrollments   StudentEnrollment[]
+  attendance    Attendance[]
+  gradeRecords  GradeRecord[]
+  assessmentSubmissions AssessmentSubmission[]
+  reportCards   ReportCard[]
+  payments      Payment[]
 
   @@unique([tenantId, studentId])
   @@unique([tenantId, rollNumber])
@@ -385,6 +409,540 @@ model ParentProfile {
   children     Json     @default("[]")
 
   @@map("parent_profiles")
+}
+
+// Student Management Models
+
+// Student Enrollment
+model StudentEnrollment {
+  id                String   @id @default(cuid())
+  tenantId          String
+  studentId         String
+  academicYearId    String
+  gradeId           String
+  classId           String
+  admissionNumber   String
+  admissionDate     DateTime
+  status            EnrollmentStatus @default(ACTIVE)
+  previousSchool    String?
+  transferCertificate String?
+  medicalInfo       Json?
+  emergencyContacts Json     @default("[]")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  student       StudentProfile @relation(fields: [studentId], references: [id])
+  academicYear  AcademicYear   @relation(fields: [academicYearId], references: [id])
+  grade         Grade          @relation(fields: [gradeId], references: [id])
+  class         Class          @relation(fields: [classId], references: [id])
+
+  @@unique([tenantId, admissionNumber])
+  @@unique([tenantId, studentId, academicYearId])
+  @@index([tenantId, status])
+  @@map("student_enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  GRADUATED
+  DROPPED
+}
+
+// Attendance Management
+model Attendance {
+  id              String         @id @default(cuid())
+  tenantId        String
+  studentId       String
+  classId         String
+  subjectId       String?
+  date            DateTime       @db.Date
+  status          AttendanceStatus
+  timeIn          DateTime?
+  timeOut         DateTime?
+  remarks         String?
+  markedByUserId  String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+  class     Class          @relation(fields: [classId], references: [id])
+  subject   Subject?       @relation(fields: [subjectId], references: [id])
+
+  @@unique([tenantId, studentId, date, subjectId])
+  @@index([tenantId, date])
+  @@index([tenantId, classId, date])
+  @@map("attendance")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+  HALF_DAY
+}
+
+// Academic Records & Grades
+model GradeRecord {
+  id              String      @id @default(cuid())
+  tenantId        String
+  studentId       String
+  subjectId       String
+  assessmentId    String?
+  academicYearId  String
+  semesterId      String?
+  gradeType       GradeType
+  maxMarks        Float
+  obtainedMarks   Float
+  percentage      Float
+  grade           String?
+  remarks         String?
+  gradedByUserId  String
+  gradedAt        DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  student      StudentProfile @relation(fields: [studentId], references: [id])
+  subject      Subject        @relation(fields: [subjectId], references: [id])
+  assessment   Assessment?    @relation(fields: [assessmentId], references: [id])
+  academicYear AcademicYear   @relation(fields: [academicYearId], references: [id])
+  semester     Semester?      @relation(fields: [semesterId], references: [id])
+
+  @@index([tenantId, studentId])
+  @@index([tenantId, subjectId])
+  @@index([tenantId, academicYearId])
+  @@map("grade_records")
+}
+
+enum GradeType {
+  QUIZ
+  ASSIGNMENT
+  MIDTERM
+  FINAL
+  PROJECT
+  PARTICIPATION
+  OTHER
+}
+
+// Assessment/Examination System
+model Assessment {
+  id              String         @id @default(cuid())
+  tenantId        String
+  title           String
+  description     String?
+  assessmentType  AssessmentType
+  subjectId       String
+  classId         String
+  totalMarks      Float
+  passingMarks    Float
+  duration        Int?           // in minutes
+  instructions    String?
+  scheduledDate   DateTime?
+  startTime       DateTime?
+  endTime         DateTime?
+  status          AssessmentStatus @default(DRAFT)
+  createdByUserId String
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  subject      Subject        @relation(fields: [subjectId], references: [id])
+  class        Class          @relation(fields: [classId], references: [id])
+  questions    Question[]
+  submissions  AssessmentSubmission[]
+  gradeRecords GradeRecord[]
+
+  @@index([tenantId, assessmentType])
+  @@index([tenantId, subjectId])
+  @@index([tenantId, classId])
+  @@map("assessments")
+}
+
+enum AssessmentType {
+  QUIZ
+  ASSIGNMENT
+  MIDTERM_EXAM
+  FINAL_EXAM
+  PROJECT
+  PRACTICAL
+  ORAL
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Question Bank
+model Question {
+  id            String       @id @default(cuid())
+  tenantId      String
+  assessmentId  String?
+  type          QuestionType
+  question      String
+  options       Json?        // for multiple choice
+  correctAnswer String?
+  marks         Float        @default(1)
+  difficulty    DifficultyLevel @default(MEDIUM)
+  explanation   String?
+  tags          Json         @default("[]")
+  createdByUserId String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  assessment Assessment? @relation(fields: [assessmentId], references: [id])
+
+  @@index([tenantId, type])
+  @@index([tenantId, difficulty])
+  @@map("questions")
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  FILL_IN_BLANK
+  MATCHING
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// Assessment Submissions
+model AssessmentSubmission {
+  id           String   @id @default(cuid())
+  tenantId     String
+  assessmentId String
+  studentId    String
+  answers      Json     @default("{}")
+  score        Float?
+  percentage   Float?
+  submittedAt  DateTime?
+  autoGraded   Boolean  @default(false)
+  manualReview Boolean  @default(false)
+  feedback     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  assessment Assessment     @relation(fields: [assessmentId], references: [id])
+  student    StudentProfile @relation(fields: [studentId], references: [id])
+
+  @@unique([tenantId, assessmentId, studentId])
+  @@index([tenantId, submittedAt])
+  @@map("assessment_submissions")
+}
+
+// Report Cards
+model ReportCard {
+  id             String   @id @default(cuid())
+  tenantId       String
+  studentId      String
+  academicYearId String
+  semesterId     String?
+  overallGrade   String?
+  overallPercentage Float?
+  rank           Int?
+  totalStudents  Int?
+  attendance     Json?    // attendance summary
+  remarks        String?
+  teacherComments String?
+  principalComments String?
+  generatedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  student      StudentProfile @relation(fields: [studentId], references: [id])
+  academicYear AcademicYear   @relation(fields: [academicYearId], references: [id])
+  semester     Semester?      @relation(fields: [semesterId], references: [id])
+
+  @@unique([tenantId, studentId, academicYearId, semesterId])
+  @@index([tenantId, academicYearId])
+  @@map("report_cards")
+}
+
+// Communication & Messaging System
+model Message {
+  id          String      @id @default(cuid())
+  tenantId    String
+  fromUserId  String
+  toUserIds   Json        @default("[]")
+  subject     String?
+  content     String
+  messageType MessageType @default(DIRECT)
+  priority    Priority    @default(NORMAL)
+  readBy      Json        @default("[]")
+  attachments Json        @default("[]")
+  parentId    String?     // for replies
+  sentAt      DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Self-relation for replies
+  parent   Message?  @relation("MessageReplies", fields: [parentId], references: [id])
+  replies  Message[] @relation("MessageReplies")
+
+  @@index([tenantId, fromUserId])
+  @@index([tenantId, messageType])
+  @@map("messages")
+}
+
+enum MessageType {
+  DIRECT
+  ANNOUNCEMENT
+  BROADCAST
+  SYSTEM
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// Notifications
+model Notification {
+  id         String             @id @default(cuid())
+  tenantId   String
+  userId     String
+  title      String
+  content    String
+  type       NotificationType
+  data       Json?              // additional data
+  read       Boolean            @default(false)
+  readAt     DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([tenantId, type])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  ASSIGNMENT
+  GRADE
+  ATTENDANCE
+  ANNOUNCEMENT
+  PAYMENT
+  EVENT
+  SYSTEM
+}
+
+// Timetable & Scheduling
+model TimeSlot {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String   // e.g., "Period 1", "Morning Break"
+  startTime String   // HH:MM format
+  endTime   String   // HH:MM format
+  dayOfWeek Int      // 1-7 (Monday-Sunday)
+  isBreak   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  timetableEntries TimetableEntry[]
+
+  @@unique([tenantId, name, dayOfWeek])
+  @@index([tenantId, dayOfWeek])
+  @@map("time_slots")
+}
+
+model TimetableEntry {
+  id         String   @id @default(cuid())
+  tenantId   String
+  classId    String
+  subjectId  String?
+  teacherId  String?
+  timeSlotId String
+  roomId     String?
+  dayOfWeek  Int      // 1-7 (Monday-Sunday)
+  isActive   Boolean  @default(true)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  class    Class    @relation(fields: [classId], references: [id])
+  subject  Subject? @relation(fields: [subjectId], references: [id])
+  timeSlot TimeSlot @relation(fields: [timeSlotId], references: [id])
+
+  @@unique([tenantId, classId, timeSlotId, dayOfWeek])
+  @@index([tenantId, classId])
+  @@index([tenantId, teacherId])
+  @@map("timetable_entries")
+}
+
+// Resource Management
+model Room {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  code        String?
+  roomType    RoomType @default(CLASSROOM)
+  capacity    Int?
+  location    String?
+  facilities  Json     @default("[]")
+  isAvailable Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, code])
+  @@index([tenantId, roomType])
+  @@map("rooms")
+}
+
+enum RoomType {
+  CLASSROOM
+  LAB
+  LIBRARY
+  AUDITORIUM
+  GYMNASIUM
+  OFFICE
+  OTHER
+}
+
+// Financial Management
+model FeeStructure {
+  id             String      @id @default(cuid())
+  tenantId       String
+  name           String
+  academicYearId String
+  gradeId        String?
+  feeType        FeeType
+  amount         Float
+  dueDate        DateTime?
+  isRecurring    Boolean     @default(false)
+  frequency      Frequency?  // for recurring fees
+  description    String?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  grade        Grade?       @relation(fields: [gradeId], references: [id])
+  payments     Payment[]
+
+  @@index([tenantId, feeType])
+  @@index([tenantId, academicYearId])
+  @@map("fee_structures")
+}
+
+enum FeeType {
+  TUITION
+  ADMISSION
+  LIBRARY
+  LABORATORY
+  SPORTS
+  TRANSPORT
+  EXAM
+  LATE_FEE
+  OTHER
+}
+
+enum Frequency {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  tenantId       String
+  studentId      String
+  feeStructureId String
+  amount         Float
+  paidAmount     Float?
+  paymentDate    DateTime?
+  dueDate        DateTime
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  PaymentMethod?
+  transactionId  String?
+  receiptNumber  String?
+  remarks        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  student      StudentProfile @relation(fields: [studentId], references: [id])
+  feeStructure FeeStructure   @relation(fields: [feeStructureId], references: [id])
+
+  @@unique([tenantId, receiptNumber])
+  @@index([tenantId, studentId])
+  @@index([tenantId, status])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CHEQUE
+  CARD
+  BANK_TRANSFER
+  UPI
+  WALLET
+  OTHER
+}
+
+// Events & Calendar
+model CalendarEvent {
+  id          String      @id @default(cuid())
+  tenantId    String
+  title       String
+  description String?
+  eventType   CalendarEventType
+  startDate   DateTime
+  endDate     DateTime?
+  isAllDay    Boolean     @default(false)
+  location    String?
+  organizer   String?
+  targetAudience Json     @default("[]") // roles, grades, classes
+  attachments Json        @default("[]")
+  isPublic    Boolean     @default(false)
+  createdByUserId String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, startDate])
+  @@map("calendar_events")
+}
+
+enum CalendarEventType {
+  ACADEMIC
+  EXAM
+  HOLIDAY
+  SPORTS
+  CULTURAL
+  MEETING
+  OTHER
 }
 
 // Audit Log
