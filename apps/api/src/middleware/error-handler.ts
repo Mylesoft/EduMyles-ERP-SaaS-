@@ -4,15 +4,15 @@ import { logger } from '../utils/logger';
 export interface ApiError extends Error {
   statusCode?: number;
   code?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export class AppError extends Error implements ApiError {
   public statusCode: number;
   public code: string;
-  public details?: any;
+  public details?: Record<string, unknown>;
 
-  constructor(message: string, statusCode: number = 500, code?: string, details?: any) {
+  constructor(message: string, statusCode: number = 500, code?: string, details?: Record<string, unknown>) {
     super(message);
     this.statusCode = statusCode;
     this.code = code || 'INTERNAL_ERROR';
@@ -26,8 +26,9 @@ export const errorHandler = (
   error: ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
+  void _next; // satisfy lint unused param in type signature
   let statusCode = error.statusCode || 500;
   let message = error.message || 'Internal Server Error';
   let code = error.code || 'INTERNAL_ERROR';
@@ -133,7 +134,7 @@ export const notFoundHandler = (req: Request, res: Response, next: NextFunction)
   next(error);
 };
 
-export const asyncHandler = (fn: Function) => {
+export const asyncHandler = <T extends (req: Request, res: Response, next: NextFunction) => any>(fn: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

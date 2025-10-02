@@ -6,7 +6,7 @@ import { TenantContext } from '@edumyles/types';
 declare global {
   namespace Express {
     interface Request {
-      tenant?: any;
+      tenant?: Record<string, unknown> & { id?: string };
       tenantContext?: TenantContext;
     }
   }

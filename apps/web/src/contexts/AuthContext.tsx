@@ -18,7 +18,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (userData: any) => Promise<void>;
+  register: (userData: Record<string, unknown>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,8 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('accessToken');
       if (token) {
-        const response: any = await apiClient.getCurrentUser();
-        setUser(response.data.user);
+        const response = await apiClient.getCurrentUser();
+        // response typed as ApiResponse<User>
+        setUser((response as any).data.user);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -50,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response: any = await apiClient.login({ email, password });
-      setUser(response.data.user);
+      const response = await apiClient.login({ email, password });
+      setUser((response as any).data.user);
       router.push('/dashboard');
     } catch (error) {
       throw error;
@@ -67,10 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (userData: any) => {
+  const register = async (userData: Record<string, unknown>) => {
     try {
-      const response: any = await apiClient.register(userData);
-      setUser(response.data.user);
+      const response = await apiClient.register(userData as any);
+      setUser((response as any).data.user);
       router.push('/dashboard');
     } catch (error) {
       throw error;

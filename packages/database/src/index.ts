@@ -1,4 +1,28 @@
 import { PrismaClient } from '@prisma/client';
+import type {
+  Tenant as PrismaTenant,
+  User as PrismaUser,
+  TenantUser as PrismaTenantUser,
+  Session as PrismaSession,
+  Module as PrismaModule,
+  ModuleInstallation as PrismaModuleInstallation,
+  Event as PrismaEvent,
+  EventSubscription as PrismaEventSubscription,
+  Permission as PrismaPermission,
+  RolePermission as PrismaRolePermission,
+  AcademicYear as PrismaAcademicYear,
+  Semester as PrismaSemester,
+  Grade as PrismaGrade,
+  Class as PrismaClass,
+  Subject as PrismaSubject,
+  StudentProfile as PrismaStudentProfile,
+  TeacherProfile as PrismaTeacherProfile,
+  ParentProfile as PrismaParentProfile,
+  AuditLog as PrismaAuditLog,
+  TenantStatus,
+  UserRole,
+  ModuleInstallationStatus,
+} from '@prisma/client';
 
 declare global {
   var __prisma: PrismaClient | undefined;
@@ -16,44 +40,39 @@ export { prisma };
 export * from '@prisma/client';
 
 // Re-export types for convenience
-export type {
-  Tenant,
-  User,
-  TenantUser,
-  Session,
-  Module,
-  ModuleInstallation,
-  Event,
-  EventSubscription,
-  Permission,
-  RolePermission,
-  AcademicYear,
-  Semester,
-  Grade,
-  Class,
-  Subject,
-  StudentProfile,
-  TeacherProfile,
-  ParentProfile,
-  AuditLog,
-} from '@prisma/client';
+// Local aliases to ensure types are available in this module's scope
+export type Tenant = PrismaTenant;
+export type User = PrismaUser;
+export type TenantUser = PrismaTenantUser;
+export type Session = PrismaSession;
+export type Module = PrismaModule;
+export type ModuleInstallation = PrismaModuleInstallation;
+export type Event = PrismaEvent;
+export type EventSubscription = PrismaEventSubscription;
+export type Permission = PrismaPermission;
+export type RolePermission = PrismaRolePermission;
+export type AcademicYear = PrismaAcademicYear;
+export type Semester = PrismaSemester;
+export type Grade = PrismaGrade;
+export type Class = PrismaClass;
+export type Subject = PrismaSubject;
+export type StudentProfile = PrismaStudentProfile;
+export type TeacherProfile = PrismaTeacherProfile;
+export type ParentProfile = PrismaParentProfile;
+export type AuditLog = PrismaAuditLog;
 
 // Export enums
-export {
-  TenantStatus,
-  UserRole,
-  ModuleInstallationStatus,
-} from '@prisma/client';
+export { TenantStatus, UserRole, ModuleInstallationStatus } from '@prisma/client';
 
 // Utility types for common operations
-export type CreateTenantData = Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateTenantData = Partial<Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'>>;
+export type CreateTenantData = Omit<PrismaTenant, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateTenantData = Partial<Omit<PrismaTenant, 'id' | 'createdAt' | 'updatedAt'>>;
 
-export type CreateUserData = Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'lastLoginAt'>;
-export type UpdateUserData = Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>;
+export type CreateUserData = Omit<PrismaUser, 'id' | 'createdAt' | 'updatedAt' | 'lastLoginAt'>;
+export type UpdateUserData = Partial<Omit<PrismaUser, 'id' | 'createdAt' | 'updatedAt'>>;
 
-export type CreateTenantUserData = Omit<TenantUser, 'id' | 'createdAt' | 'updatedAt'>;
-export type UpdateTenantUserData = Partial<Omit<TenantUser, 'id' | 'createdAt' | 'updatedAt'>>;
+export type CreateTenantUserData = Omit<PrismaTenantUser, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateTenantUserData = Partial<Omit<PrismaTenantUser, 'id' | 'createdAt' | 'updatedAt'>>;
 
 // Database helper functions
 export async function createTenant(data: CreateTenantData) {
@@ -91,7 +110,7 @@ export async function getUserByEmail(email: string) {
   });
 }
 
-export async function createSession(data: Omit<Session, 'id' | 'createdAt'>) {
+export async function createSession(data: Omit<PrismaSession, 'id' | 'createdAt'>) {
   return prisma.session.create({ data });
 }
 
@@ -142,7 +161,7 @@ export async function getInstalledModules(tenantId: string) {
   });
 }
 
-export async function publishEvent(data: Omit<Event, 'id' | 'timestamp'>) {
+export async function publishEvent(data: Omit<PrismaEvent, 'id' | 'timestamp'>) {
   return prisma.event.create({
     data: {
       ...data,
@@ -163,7 +182,7 @@ export async function getEventSubscriptions(eventType: string) {
   });
 }
 
-export async function createAuditLog(data: Omit<AuditLog, 'id' | 'timestamp'>) {
+export async function createAuditLog(data: Omit<PrismaAuditLog, 'id' | 'timestamp'>) {
   return prisma.auditLog.create({
     data: {
       ...data,

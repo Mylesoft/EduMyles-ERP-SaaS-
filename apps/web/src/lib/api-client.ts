@@ -27,13 +27,13 @@ class ApiClient {
     }
   }
 
-  private async request<T>(
+  private async request<T = unknown>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     };
 
     if (this.token) {
@@ -45,7 +45,7 @@ class ApiClient {
       headers,
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as unknown as { message?: string } & T;
 
     if (!response.ok) {
       throw new Error(data.message || 'An error occurred');
@@ -69,15 +69,15 @@ class ApiClient {
   }
 
   async login(credentials: { email: string; password: string }) {
-    const response: any = await this.request('/api/auth/login', {
+    const response = await this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
 
-    if (response.data?.accessToken) {
-      this.setToken(response.data.accessToken);
-      if (typeof window !== 'undefined' && response.data.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.refreshToken);
+    if ((response as any).data?.accessToken) {
+      this.setToken((response as any).data.accessToken);
+      if (typeof window !== 'undefined' && (response as any).data.refreshToken) {
+        localStorage.setItem('refreshToken', (response as any).data.refreshToken);
       }
     }
 
@@ -102,13 +102,13 @@ class ApiClient {
     const refreshToken = localStorage.getItem('refreshToken');
     if (!refreshToken) throw new Error('No refresh token available');
 
-    const response: any = await this.request('/api/auth/refresh', {
+    const response = await this.request('/api/auth/refresh', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (response.data?.accessToken) {
-      this.setToken(response.data.accessToken);
+    if ((response as any).data?.accessToken) {
+      this.setToken((response as any).data.accessToken);
     }
 
     return response;
@@ -131,14 +131,14 @@ class ApiClient {
     return this.request(`/api/students/${id}`, { method: 'GET' });
   }
 
-  async createStudent(studentData: any) {
+  async createStudent(studentData: Record<string, unknown>) {
     return this.request('/api/students', {
       method: 'POST',
       body: JSON.stringify(studentData),
     });
   }
 
-  async updateStudent(id: string, studentData: any) {
+  async updateStudent(id: string, studentData: Record<string, unknown>) {
     return this.request(`/api/students/${id}`, {
       method: 'PUT',
       body: JSON.stringify(studentData),

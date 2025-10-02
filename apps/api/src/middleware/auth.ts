@@ -5,9 +5,16 @@ import { AppError } from './error-handler';
 
 declare global {
   namespace Express {
+    interface UserClaims {
+      sub: string;
+      email: string;
+      [key: string]: unknown;
+    }
     interface Request {
-      user?: any;
-      session?: any;
+      user?: Record<string, unknown>;
+      session?: Record<string, unknown>;
+      tenant?: { id: string; [key: string]: unknown };
+      tenantContext?: Record<string, unknown>;
     }
   }
 }
@@ -32,9 +39,8 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       throw new AppError('JWT secret not configured', 500, 'JWT_SECRET_MISSING');
     }
 
-    let decoded: any;
     try {
-      decoded = jwt.verify(token, jwtSecret);
+      jwt.verify(token, jwtSecret);
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         throw new AppError('Authentication token has expired', 401, 'TOKEN_EXPIRED');
@@ -50,12 +56,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     // Verify tenant matches (if tenant middleware ran first)
-    if (req.tenant && session.tenantId !== req.tenant.id) {
+    if (req.tenant && session.tenantId !== (req.tenant as any).id) {
       throw new AppError('Token does not match tenant', 403, 'TENANT_MISMATCH');
     }
 
     // Find the tenant user relationship
-    const tenantUser = session.user.tenantUsers.find(tu => tu.tenantId === session.tenantId);
+    const tenantUser = (session as any).user?.tenantUsers?.find((tu: any) => tu.tenantId === (session as any).tenantId);
     
     if (!tenantUser) {
       throw new AppError('User not authorized for this tenant', 403, 'USER_NOT_AUTHORIZED');
@@ -64,12 +70,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     // Attach session and user to request
     req.session = session;
     req.user = {
-      ...session.user,
-      tenantRole: tenantUser.role,
-      tenantPermissions: tenantUser.permissions,
-      tenantPreferences: tenantUser.preferences,
-      tenantProfile: tenantUser.profile,
-    };
+      ...(session as any).user,
+      tenantRole: (tenantUser as any).role,
+      tenantPermissions: (tenantUser as any).permissions,
+      tenantPreferences: (tenantUser as any).preferences,
+      tenantProfile: (tenantUser as any).profile,
+    } as any;
 
     // Create tenant context
     if (req.tenant) {
@@ -77,7 +83,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         tenant: req.tenant,
         user: req.user,
         permissions: Array.isArray(tenantUser.permissions) ? tenantUser.permissions as string[] : [],
-        installedModules: req.tenant.moduleInstallations
+        installedModules: (req.tenant as any).moduleInstallations
           .filter((mi: any) => mi.status === 'INSTALLED')
           .map((mi: any) => mi.moduleId),
       };
@@ -95,7 +101,7 @@ export const requirePermission = (permission: string | string[]) => {
       throw new AppError('Authentication required', 401, 'AUTH_REQUIRED');
     }
 
-    const userPermissions = req.user.tenantPermissions || [];
+    const userPermissions = (req.user as any).tenantPermissions || [];
     const requiredPermissions = Array.isArray(permission) ? permission : [permission];
 
     // Check if user has super admin permission
@@ -132,7 +138,7 @@ export const requireRole = (role: string | string[]) => {
       throw new AppError('Authentication required', 401, 'AUTH_REQUIRED');
     }
 
-    const userRole = req.user.tenantRole;
+    const userRole = (req.user as any).tenantRole;
     const requiredRoles = Array.isArray(role) ? role : [role];
 
     if (!requiredRoles.includes(userRole)) {

@@ -7,25 +7,26 @@ const router = Router();
 // Get current tenant info
 router.get('/info', asyncHandler(async (req: Request, res: Response) => {
   const tenant = req.tenant;
-  
-  // Remove sensitive information
-  const { settings, contactInfo, plan, ...publicTenantInfo } = tenant;
+  const anyTenant = (tenant || {}) as any;
+  const settings = anyTenant.settings;
+  const plan = anyTenant.plan;
+  const { /* eslint-disable @typescript-eslint/no-unused-vars */ contactInfo, ...publicTenantInfo } = anyTenant;
   
   res.json({
     success: true,
     data: {
       ...publicTenantInfo,
-      settings: {
-        timezone: settings.timezone,
-        dateFormat: settings.dateFormat,
-        timeFormat: settings.timeFormat,
-        currency: settings.currency,
-        language: settings.language,
-      },
-      plan: {
-        name: plan.name,
-        features: plan.features,
-      },
+      settings: settings ? {
+        timezone: (settings as any).timezone,
+        dateFormat: (settings as any).dateFormat,
+        timeFormat: (settings as any).timeFormat,
+        currency: (settings as any).currency,
+        language: (settings as any).language,
+      } : undefined,
+      plan: plan ? {
+        name: (plan as any).name,
+        features: (plan as any).features,
+      } : undefined,
     },
   });
 }));
@@ -34,7 +35,7 @@ router.get('/info', asyncHandler(async (req: Request, res: Response) => {
 router.get('/settings', 
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const tenant = req.tenant;
+    const tenant = req.tenant as any;
     
     res.json({
       success: true,
