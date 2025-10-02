@@ -50,4 +50,4 @@ pnpm-lock.yaml
 .cache/
 *.log
 .temp/
-tmp/
+tmp/tsconfig.tsbuildinfo
