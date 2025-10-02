@@ -13,8 +13,8 @@ declare global {
     interface Request {
       user?: Record<string, unknown>;
       session?: Record<string, unknown>;
-      tenant?: { id: string; [key: string]: unknown };
-      tenantContext?: Record<string, unknown>;
+      tenant?: Record<string, unknown> & { id?: string };
+      tenantContext?: import('@edumyles/types').TenantContext;
     }
   }
 }

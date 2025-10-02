@@ -70,7 +70,13 @@ class RedisEventBus implements EventBus {
       
       // Store event in database for audit/replay purposes
       const { publishEvent } = await import('@edumyles/database');
-      await publishEvent(eventWithMeta);
+      await publishEvent({
+        tenantId: event.tenantId,
+        type: event.type,
+        source: event.source,
+        data: event.data as any,
+        metadata: (event as any).metadata ?? null,
+      } as any);
 
       logger.debug('Event published:', {
         id: eventWithMeta.id,
