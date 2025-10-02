@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "cd apps/web && rm -rf node_modules package-lock.json && npm install --legacy-peer-deps && npm run build",
+  "installCommand": "echo 'Skip root install - using custom build'",
+  "outputDirectory": "apps/web/.next",
+  "functions": {
+    "apps/web/api/**": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@next_public_api_url"
+  },
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  }
+}
